@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -139,6 +140,36 @@ if "ai_agent" not in st.session_state:
     st.session_state.ai_agent = None
 
 
+def get_active_results():
+    """Return forecast, anomaly, and hourly data for the current source."""
+    uploaded = st.session_state.user_data
+    if uploaded is not None:
+        forecast_df = uploaded.copy()
+        forecast_df["Actual"] = forecast_df[TARGET_COLUMN]
+        anomaly_df = st.session_state.user_anomalies
+        return forecast_df, anomaly_df, uploaded.copy(), "Uploaded data"
+
+    forecast_df = forecast_results.copy()
+    anomaly_df = anomaly_results.copy()
+    usage_df = hourly_data.copy()
+    return forecast_df, anomaly_df, usage_df, "Project data"
+
+
+def regression_metrics(df):
+    """Calculate metrics from actual predictions, when available."""
+    if df.empty or "Actual" not in df or "Predicted" not in df:
+        return None
+    values = df[["Actual", "Predicted"]].apply(
+        pd.to_numeric, errors="coerce"
+    ).dropna()
+    if values.empty:
+        return None
+    error = values["Actual"] - values["Predicted"]
+    nonzero = values["Actual"].abs() > 1e-12
+    mape = (error[nonzero].abs() / values.loc[nonzero, "Actual"].abs()).mean() * 100
+    return error.abs().mean(), float(np.sqrt((error ** 2).mean())), mape
+
+
 with st.sidebar:
 
     st.markdown(
@@ -186,7 +217,11 @@ if page == "Dashboard":
         "and energy analytics."
     )
 
-    if forecast_results.empty:
+    active_forecast, active_anomalies, active_usage, data_source = get_active_results()
+
+    st.caption(f"Current data source: {data_source}")
+
+    if active_forecast.empty:
 
         st.warning(
             "Forecast results are not available."
@@ -194,21 +229,18 @@ if page == "Dashboard":
 
     else:
 
-        average_consumption = (
-            forecast_results["Actual"].mean()
-        )
-
-        peak_consumption = (
-            forecast_results["Actual"].max()
-        )
+        actual_column = "Actual" if "Actual" in active_forecast.columns else TARGET_COLUMN
+        average_consumption = active_forecast[actual_column].mean()
+        peak_consumption = active_forecast[actual_column].max()
 
         if (
-            not anomaly_results.empty
-            and "Final_Anomaly" in anomaly_results.columns
+            active_anomalies is not None
+            and not active_anomalies.empty
+            and "Final_Anomaly" in active_anomalies.columns
         ):
 
             anomaly_count = int(
-                anomaly_results["Final_Anomaly"].sum()
+                active_anomalies["Final_Anomaly"].sum()
             )
 
         else:
@@ -216,7 +248,7 @@ if page == "Dashboard":
             anomaly_count = 0
 
         latest_date = (
-            forecast_results["DateTime"].max()
+            active_forecast["DateTime"].max()
         )
 
         col1, col2, col3, col4 = st.columns(4)
@@ -268,32 +300,32 @@ if page == "Dashboard":
 
         if period == "Last 7 Days":
 
-            chart_df = forecast_results.tail(
+            chart_df = active_forecast.tail(
                 24 * 7
             )
 
         elif period == "Last 14 Days":
 
-            chart_df = forecast_results.tail(
+            chart_df = active_forecast.tail(
                 24 * 14
             )
 
         elif period == "Last 30 Days":
 
-            chart_df = forecast_results.tail(
+            chart_df = active_forecast.tail(
                 24 * 30
             )
 
         else:
 
-            chart_df = forecast_results
+            chart_df = active_forecast
 
         fig = go.Figure()
 
         fig.add_trace(
             go.Scatter(
                 x=chart_df["DateTime"],
-                y=chart_df["Actual"],
+                y=chart_df[actual_column],
                 mode="lines",
                 name="Actual"
             )
@@ -326,28 +358,15 @@ if page == "Dashboard":
             "Forecasting Model Performance"
         )
 
-        m1, m2, m3 = st.columns(3)
-
-        with m1:
-
-            st.metric(
-                "MAE",
-                "903.72"
-            )
-
-        with m2:
-
-            st.metric(
-                "RMSE",
-                "1217.75"
-            )
-
-        with m3:
-
-            st.metric(
-                "MAPE",
-                "3.15%"
-            )
+        metrics = regression_metrics(active_forecast)
+        if metrics is not None:
+            mae, rmse, mape = metrics
+            m1, m2, m3 = st.columns(3)
+            m1.metric("MAE", f"{mae:,.2f}")
+            m2.metric("RMSE", f"{rmse:,.2f}")
+            m3.metric("MAPE", f"{mape:.2f}%" if pd.notna(mape) else "N/A")
+        else:
+            st.info("Model performance metrics are unavailable for this data.")
 
 
 elif page == "Analyze Your Data":
@@ -651,11 +670,24 @@ elif page == "Forecast":
         "Electricity Forecast"
     )
 
-    st.caption(
-        "XGBoost forecasting results on the test period."
-    )
+    active_forecast, _, _, data_source = get_active_results()
+    st.caption(f"Forecast and historical predictions · {data_source}")
 
-    if forecast_results.empty:
+    if st.session_state.user_data is not None:
+        history = st.session_state.user_data
+        future = st.session_state.user_forecast
+        if future is not None and not future.empty:
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=history["DateTime"].tail(168), y=history[TARGET_COLUMN].tail(168), mode="lines", name="Uploaded history"))
+            fig.add_trace(go.Scatter(x=future["DateTime"], y=future["Predicted Consumption"], mode="lines+markers", name="Next 24 hours"))
+            fig.update_layout(height=500, template="plotly_white", hovermode="x unified", xaxis_title="Date", yaxis_title="Power Consumption")
+            st.plotly_chart(fig, use_container_width=True)
+            st.dataframe(future, use_container_width=True, hide_index=True)
+            st.download_button("Download 24-Hour Forecast", future.to_csv(index=False), file_name="next_24_hours_forecast.csv", mime="text/csv")
+        else:
+            st.info("Upload and analyze a dataset first to generate its forecast.")
+
+    elif active_forecast.empty:
 
         st.warning(
             "Forecast results are not available."
@@ -667,8 +699,8 @@ elif page == "Forecast":
 
         fig.add_trace(
             go.Scatter(
-                x=forecast_results["DateTime"],
-                y=forecast_results["Actual"],
+                x=active_forecast["DateTime"],
+                y=active_forecast["Actual"],
                 mode="lines",
                 name="Actual"
             )
@@ -676,8 +708,8 @@ elif page == "Forecast":
 
         fig.add_trace(
             go.Scatter(
-                x=forecast_results["DateTime"],
-                y=forecast_results["Predicted"],
+                x=active_forecast["DateTime"],
+                y=active_forecast["Predicted"],
                 mode="lines",
                 name="Predicted"
             )
@@ -696,28 +728,13 @@ elif page == "Forecast":
             use_container_width=True
         )
 
-        c1, c2, c3 = st.columns(3)
-
-        with c1:
-
-            st.metric(
-                "MAE",
-                "903.72"
-            )
-
-        with c2:
-
-            st.metric(
-                "RMSE",
-                "1217.75"
-            )
-
-        with c3:
-
-            st.metric(
-                "MAPE",
-                "3.15%"
-            )
+        metrics = regression_metrics(active_forecast)
+        if metrics is not None:
+            mae, rmse, mape = metrics
+            c1, c2, c3 = st.columns(3)
+            c1.metric("MAE", f"{mae:,.2f}")
+            c2.metric("RMSE", f"{rmse:,.2f}")
+            c3.metric("MAPE", f"{mape:.2f}%" if pd.notna(mape) else "N/A")
 
 elif page == "Anomaly Detection":
 
@@ -729,7 +746,10 @@ elif page == "Anomaly Detection":
         "Potentially unusual electricity consumption events."
     )
 
-    if anomaly_results.empty:
+    _, active_anomalies, _, data_source = get_active_results()
+    st.caption(f"Current data source: {data_source}")
+
+    if active_anomalies is None or active_anomalies.empty:
 
         st.warning(
             "Anomaly results are not available."
@@ -737,15 +757,15 @@ elif page == "Anomaly Detection":
 
     else:
 
-        if "Final_Anomaly" in anomaly_results.columns:
+        if "Final_Anomaly" in active_anomalies.columns:
 
-            final_anomalies = anomaly_results[
-                anomaly_results["Final_Anomaly"]
+            final_anomalies = active_anomalies[
+                active_anomalies["Final_Anomaly"]
             ].copy()
 
         else:
 
-            final_anomalies = anomaly_results.copy()
+            final_anomalies = active_anomalies.copy()
 
         st.metric(
             "Detected Anomalies",
@@ -776,7 +796,10 @@ elif page == "Peak Usage":
         "Average electricity consumption by hour of day."
     )
 
-    if hourly_data.empty:
+    _, _, active_usage, data_source = get_active_results()
+    st.caption(f"Current data source: {data_source}")
+
+    if active_usage.empty:
 
         st.warning(
             "Hourly data is not available."
@@ -784,7 +807,11 @@ elif page == "Peak Usage":
 
     else:
 
-        temp_df = hourly_data.copy()
+        temp_df = active_usage.copy()
+
+        if "DateTime" not in temp_df.columns or TARGET_COLUMN not in temp_df.columns:
+            st.warning("The active dataset does not contain usable timestamp and consumption columns.")
+            st.stop()
 
         temp_df["Hour"] = (
             temp_df["DateTime"].dt.hour
