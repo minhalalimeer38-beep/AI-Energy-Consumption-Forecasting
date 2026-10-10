@@ -1,11 +1,14 @@
+import os
 from pathlib import Path
+
+import streamlit as st
 from config import PROJECT_DIR
 
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.documents import Document
-from sentence_transformers import SentenceTransformer
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pypdf import PdfReader
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -15,25 +18,28 @@ KNOWLEDGE_DIR = PROJECT_DIR / "Knowledge"
 VECTOR_STORE_DIR = (
     PROJECT_DIR
     / "VectorStore"
-    / "energy_knowledge_db"
+    / "energy_knowledge_db_gemini"
 )
 
 COLLECTION_NAME = "energy_knowledge"
-
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 120
 
 TOP_K = 4
 
+@st.cache_resource
+
 def get_embeddings():
-    embeddings = HuggingFaceEmbeddings(
-        model_name=EMBEDDING_MODEL,
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True}
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "Add GEMINI_API_KEY to .env locally or to Streamlit Cloud secrets."
+        )
+    return GoogleGenerativeAIEmbeddings(
+        model="gemini-embedding-001",
+        google_api_key=api_key,
     )
-    return embeddings
 
 def load_knowledge_documents():
     """
@@ -83,29 +89,17 @@ def load_knowledge_documents():
         KNOWLEDGE_DIR.glob("*.pdf")
     )
 
-    if pdf_files:
-
-        from langchain_community.document_loaders import (
-            PyPDFLoader
-        )
-
-        for file_path in pdf_files:
-
-            loader = PyPDFLoader(
-                str(file_path)
-            )
-
-            pdf_documents = loader.load()
-
-            for document in pdf_documents:
-
-                document.metadata[
-                    "source"
-                ] = file_path.name
-
-            documents.extend(
-                pdf_documents
-            )
+    for file_path in pdf_files:
+        reader = PdfReader(str(file_path))
+        for page_number, page in enumerate(reader.pages, start=1):
+            text = page.extract_text() or ""
+            if text.strip():
+                documents.append(
+                    Document(
+                        page_content=text,
+                        metadata={"source": file_path.name, "page": page_number},
+                    )
+                )
 
     if not documents:
 
@@ -170,6 +164,8 @@ def build_vector_store():
     )
 
     return vector_store
+
+@st.cache_resource
 
 def load_vector_store():
     """
