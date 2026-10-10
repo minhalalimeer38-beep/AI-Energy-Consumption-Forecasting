@@ -19,6 +19,11 @@ MODEL_NAME = os.getenv(
     "gemini-3.8-flash"
 )
 
+
+def get_gemini_api_key():
+    """Read the Gemini key from the project's supported env names."""
+    return os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+
 def create_energy_agent(
     consumption_df=None,
     anomaly_df=None
@@ -33,8 +38,16 @@ def create_energy_agent(
     - Identify peak usage
     """
 
+    api_key = get_gemini_api_key()
+    if not api_key:
+        raise ValueError(
+            "Gemini API key was not found. Add GEMINI_API_KEY "
+            "to the project's .env file, then restart the app."
+        )
+
     llm = ChatGoogleGenerativeAI(
-        model=MODEL_NAME
+        model=MODEL_NAME,
+        api_key=api_key
     )
 
     @tool
