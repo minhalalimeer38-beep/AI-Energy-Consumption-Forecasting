@@ -1,60 +1,87 @@
-Haan—**current GitHub repo ka structure dekh liya hai.** Ek correction: tumhare repo mein model files `.pkl` hain; meri pehle wali `.joblib` wali baat doosre local folder ke models se mix ho gayi thi.
+Pasted text mein purane chat replies aur workflow ke tukray bhi README ke saath mix ho gaye hain. Neeche **clean, complete version** hai—purana README poora replace karke ye paste karo.
 
-Neeche README ko medium length mein, actual folder names aur model filenames ke saath rakha hai. Isay GitHub ke `README.md` mein paste kar sakte ho:
+`#` aur `##` raw README mein headings banane ke liye zaroori hain; GitHub par ye bade headings ki tarah render honge, literal `#` ki tarah nahi.
 
-```markdown
+````markdown
 # AI-Based Electricity Consumption Forecasting and Anomaly Detection
 
-A Streamlit application that analyzes electricity consumption, forecasts future usage, detects unusual readings, identifies peak-usage hours, and answers energy-related questions using an AI Assistant.
+A Streamlit application for analyzing electricity consumption, forecasting future usage, detecting unusual readings, identifying peak-usage hours, and answering energy-related questions through an AI Assistant.
 
 ## Project Overview
 
-Raw electricity readings are difficult to interpret on their own. This project processes historical consumption data into interactive charts, forecasts, anomaly alerts, and peak-usage insights. Users can also upload compatible CSV files and ask questions through the AI Assistant.
+The app processes historical electricity readings and displays consumption trends, forecasts, anomaly alerts, and peak-usage insights. Users can also upload a compatible CSV file and ask questions through the AI Assistant.
 
 ## Main Features
 
-- Consumption dashboard with average and peak usage
-- CSV upload and data analysis
-- 24-hour electricity consumption forecast using XGBoost
-- Unusual-usage detection using Isolation Forest and the app’s anomaly-analysis logic
+- Dashboard with consumption metrics and charts
+- CSV upload and analysis
+- 24-hour forecast using XGBoost
+- Anomaly detection using Isolation Forest and the app's anomaly-analysis logic
 - Peak-usage analysis by hour
 - Downloadable forecast and anomaly results
-- AI Assistant for consumption questions and energy guidance
-- RAG-based retrieval from energy documents
+- Gemini-powered AI Assistant with RAG-based document retrieval
 - Light and dark themes
 
-## Project Workflow
+## How the App Works
 
-```text
-Electricity Data → Validation and Preprocessing → Hourly Features
-                 → Forecasting and Anomaly Detection
-                 → Dashboard and AI Assistant
+The app has two main workflows.
+
+### Data Analysis Workflow
+
+```mermaid
+flowchart TD
+    A[Open Dashboard] --> B[View project data]
+    B --> C[Open Analyze Your Data]
+    C --> D[Upload compatible CSV]
+    D --> E[Validate columns and timestamps]
+    E --> F[Clean data and aggregate readings hourly]
+    F --> G[Create forecasting features]
+    G --> H[Generate 24-hour forecast]
+    G --> I[Detect unusual usage]
+    G --> J[Calculate peak-usage periods]
+    H --> K[Display charts and results]
+    I --> K
+    J --> K
+    K --> L[Download results]
 ```
+
+### AI Assistant Workflow
+
+```mermaid
+flowchart TD
+    A[User asks a question] --> B[AI agent identifies the required information]
+    B --> C{Question type}
+    C -->|Consumption, peak, or anomaly| D[Use a data-analysis tool]
+    C -->|Energy guidance or documents| E[Search the RAG knowledge base]
+    D --> F[Gemini prepares a response]
+    E --> F
+    F --> G[Show the answer in the app]
+```
+
+The Dashboard initially shows project data. Uploaded CSV files are analyzed through **Analyze Your Data**.
 
 ## Dataset and Forecasting
 
-The forecasting model was developed using the **UCI Power Consumption of Tetouan City** dataset. The original readings are at 10-minute intervals and are processed into hourly data.
+The forecasting model was developed using the **UCI Power Consumption of Tetouan City** dataset. Its original readings are at 10-minute intervals and are processed into hourly data.
 
-The XGBoost model uses historical, time-based, rolling, and weather features. It produces a 24-hour forecast. Forecast accuracy may vary when the uploaded data comes from a different location or usage pattern.
-
-The app’s upload page shows the required CSV columns. The compatible standard format is:
+The XGBoost model uses historical, time-based, rolling, and weather features to generate a 24-hour forecast. The compatible upload format is:
 
 ```text
 DateTime
 Zone 1 Power Consumption
 ```
 
-At least 200 hourly records are recommended so the app has enough history for analysis and forecasting.
+At least 200 hourly records are recommended. Forecast accuracy may vary for data from other locations or usage patterns.
 
 ## Anomaly Detection
 
-The system flags readings that differ from expected consumption patterns. An anomaly is a statistical alert; it does not by itself prove an appliance fault, theft, or any specific cause.
+The system flags readings that differ from expected consumption patterns. An anomaly is a statistical alert; it does not prove an appliance fault, electricity theft, or any specific cause.
 
 ## AI Assistant and RAG
 
-The AI Assistant uses Gemini to answer natural-language questions. It can use consumption-analysis tools and retrieve relevant information from energy documents using RAG, Gemini embeddings, and Chroma.
+The AI Assistant uses Gemini to answer natural-language questions. It can use consumption-analysis tools and retrieve relevant information from energy documents with RAG, Gemini Embeddings, and Chroma.
 
-The assistant requires a Gemini API key. RAG provides document-based information; it does not train the forecasting model.
+The assistant requires a Gemini API key. RAG retrieves document information; it does not train the forecasting model.
 
 ## Project Structure
 
@@ -94,71 +121,9 @@ AI-Energy-Consumption-Forecasting/
 - **Dashboard:** Streamlit, Plotly
 - **AI and RAG:** Google Gemini, LangChain, Chroma, PyPDF
 
-Bilkul. README mein existing **Project Workflow** section ko is section se replace kar do. Is mein app ka data flow aur user ke use karne ka tareeqa dono dikh rahe hain:
-
-```markdown
-## How the App Works
-
-The application has two main workflows: electricity data analysis and AI-assisted questions.
-
-### Data Analysis Workflow
-
-```mermaid
-flowchart TD
-    A[Open Dashboard] --> B[View project data and consumption trends]
-    B --> C[Open Analyze Your Data]
-    C --> D[Upload compatible CSV]
-    D --> E[Validate required columns and timestamps]
-    E --> F[Clean, sort, and aggregate readings hourly]
-    F --> G[Create time, lag, rolling, and weather features]
-    G --> H[Generate 24-hour forecast with XGBoost]
-    G --> I[Detect unusual usage with anomaly detection]
-    G --> J[Calculate peak-usage periods]
-    H --> K[Show charts, metrics, and results]
-    I --> K
-    J --> K
-    K --> L[Download forecast or anomaly results]
-```
-
-Haan, pichle message mein formatting ki wajah se shayad workflow render na hua ho—maine poora section outer code block ke andar de diya tha. **README mein sirf section paste karo; uske around extra triple backticks mat lagana.** Dono `mermaid` diagrams ke backticks rehne do:
-
-## How the App Works
-
-### Data Analysis Workflow
-
-```mermaid
-flowchart TD
-    A[Open Dashboard] --> B[View project data]
-    B --> C[Open Analyze Your Data]
-    C --> D[Upload compatible CSV]
-    D --> E[Validate columns and timestamps]
-    E --> F[Clean data and aggregate hourly]
-    F --> G[Create forecasting features]
-    G --> H[Generate 24-hour forecast]
-    G --> I[Detect unusual usage]
-    G --> J[Calculate peak-usage periods]
-    H --> K[Display charts and results]
-    I --> K
-    J --> K
-    K --> L[Download results]
-```
-
-### AI Assistant Workflow
-
-```mermaid
-flowchart TD
-    A[User asks a question] --> B[AI agent identifies what is needed]
-    B --> C{Question type?}
-    C -->|Consumption, peak, or anomaly| D[Use data-analysis tool]
-    C -->|Energy guidance or documents| E[Search knowledge base with RAG]
-    D --> F[Gemini prepares the answer]
-    E --> F
-    F --> G[Show answer to the user]
-```
-
 ## Run Locally
 
-Use Python 3.12, then run:
+Use Python 3.12:
 
 ```bash
 git clone https://github.com/minhalalimeer38-beep/AI-Energy-Consumption-Forecasting.git
@@ -192,12 +157,12 @@ These results apply to that test period and are not guaranteed for every uploade
 
 ## Limitations
 
-- The forecasting model was trained on the Tetouan City dataset; results may vary on other regions or households.
+- The forecasting model was trained on the Tetouan City dataset; performance may vary on other regions or households.
 - Anomaly detection identifies unusual patterns but cannot determine their physical cause.
-- AI responses depend on the Gemini API and the relevance of the available knowledge documents.
+- AI responses depend on the Gemini API and the available knowledge documents.
 
 ## Links
 
 - [Live application](https://ai-energy-consumption-forecasting.streamlit.app/)
 - [GitHub repository](https://github.com/minhalalimeer38-beep/AI-Energy-Consumption-Forecasting)
-```
+````
