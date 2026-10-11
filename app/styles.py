@@ -2,7 +2,6 @@ import streamlit as st
 
 
 def load_css():
-
     st.markdown(
         """
         <style>
@@ -247,7 +246,6 @@ def load_css():
         /* RESPONSIVE */
 
         @media (max-width: 768px) {
-
             .main .block-container {
                 padding-left: 1rem;
                 padding-right: 1rem;
@@ -260,10 +258,52 @@ def load_css():
             .page-description {
                 font-size: 13px;
             }
-
         }
 
         </style>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
+
+    # Dark theme ke liye matching page, card aur text colors
+    theme = getattr(st.context, "theme", None)
+
+    if getattr(theme, "type", "light") == "dark":
+        st.markdown(
+            """
+            <style>
+            .stApp {
+                background-color: #0e1117 !important;
+                color: #f8fafc !important;
+            }
+
+            .page-title,
+            .section-title,
+            .empty-state h2 {
+                color: #f8fafc !important;
+            }
+
+            .page-eyebrow,
+            .page-description,
+            .top-header,
+            .empty-state p {
+                color: #cbd5e1 !important;
+            }
+
+            .empty-state,
+            section[data-testid="stFileUploader"] {
+                background-color: #1e293b !important;
+                border-color: #374151 !important;
+            }
+
+            div[data-testid="stDataFrame"] {
+                border-color: #374151 !important;
+            }
+
+            hr {
+                border-color: #374151 !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
