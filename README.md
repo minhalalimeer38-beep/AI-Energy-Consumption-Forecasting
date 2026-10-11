@@ -1,7 +1,3 @@
-Pasted text mein purane chat replies aur workflow ke tukray bhi README ke saath mix ho gaye hain. Neeche **clean, complete version** hai—purana README poora replace karke ye paste karo.
-
-`#` aur `##` raw README mein headings banane ke liye zaroori hain; GitHub par ye bade headings ki tarah render honge, literal `#` ki tarah nahi.
-
 ````markdown
 # AI-Based Electricity Consumption Forecasting and Anomaly Detection
 
