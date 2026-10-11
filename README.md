@@ -1,4 +1,3 @@
-````markdown
 # AI-Based Electricity Consumption Forecasting and Anomaly Detection
 
 A Streamlit application that analyzes electricity consumption, forecasts future usage, detects unusual readings, identifies peak-usage hours, and answers energy-related questions using an AI Assistant.
@@ -162,4 +161,3 @@ These results apply to the evaluated test period and are not guaranteed for ever
 
 - [Live application](https://ai-energy-consumption-forecasting.streamlit.app/)
 - [GitHub repository](https://github.com/minhalalimeer38-beep/AI-Energy-Consumption-Forecasting)
-````
