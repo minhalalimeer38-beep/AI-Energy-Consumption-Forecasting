@@ -25,7 +25,7 @@ Raw electricity readings are difficult to interpret on their own. This project p
 Electricity Data → Validation and Preprocessing → Hourly Features
                  → Forecasting and Anomaly Detection
                  → Dashboard and AI Assistant
-```
+
 
 ## Dataset and Forecasting
 
@@ -38,7 +38,7 @@ The app’s upload page shows the required CSV columns. The compatible standard 
 ```text
 DateTime
 Zone 1 Power Consumption
-```
+
 
 At least 200 hourly records are recommended so the app has enough history for analysis and forecasting.
 
@@ -81,7 +81,6 @@ AI-Energy-Consumption-Forecasting/
 ├── .gitignore
 ├── README.md
 └── requirements.txt
-```
 
 ## Technology Stack
 
@@ -122,9 +121,6 @@ flowchart TD
     D --> F[Gemini prepares the answer]
     E --> F
     F --> G[Show answer to the user]
-```
-
-GitHub README mein `mermaid` block diagram ke taur par render hona chahiye. Push ke baad page refresh karke dekho.
 
 ## Run Locally
 
@@ -138,13 +134,13 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 streamlit run app/app.py
-```
+
 
 For local use, create a `.env` file in the project root:
 
 ```env
 GEMINI_API_KEY=your_api_key
-```
+
 
 Do not commit `.env` or publish the real API key. On Streamlit Cloud, add the key under **Manage app → Settings → Secrets**.
 
