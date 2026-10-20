@@ -7,7 +7,7 @@ import streamlit as st
 from config import PROJECT_DIR
 
 from langchain_chroma import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
@@ -18,7 +18,7 @@ KNOWLEDGE_DIR = PROJECT_DIR / "Knowledge"
 VECTOR_STORE_DIR = (
     PROJECT_DIR
     / "VectorStore"
-    / "energy_knowledge_db_gemini"
+    / "energy_knowledge_db_huggingface"
 )
 
 COLLECTION_NAME = "energy_knowledge"
@@ -32,20 +32,10 @@ SUPPORTED_EXTENSIONS = {".txt", ".md", ".pdf"}
 
 @st.cache_resource
 def get_embeddings():
-    api_key = (
-        os.getenv("GEMINI_API_KEY")
-        or os.getenv("GOOGLE_API_KEY")
-    )
-
-    if not api_key:
-        raise ValueError(
-            "Add GEMINI_API_KEY to .env locally "
-            "or to Streamlit Cloud secrets."
-        )
-
-    return GoogleGenerativeAIEmbeddings(
-        model="gemini-embedding-001",
-        google_api_key=api_key,
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
     )
 
 
