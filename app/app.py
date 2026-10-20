@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
+import logging
 
 from config import (
     DATA_DIR,
@@ -967,23 +968,25 @@ elif page == "AI Assistant":
                 }
             )
 
-        except Exception as e:
-
-            error_message = (
-                "AI Assistant could not respond. "
-                "Please check your Gemini API key and "
-                f"AI dependencies.\n\nError: {e}"
-            )
-
-            with st.chat_message("assistant"):
-
-                st.error(
-                    error_message
+            except Exception as e:
+    
+                logging.exception("AI Assistant request failed")
+    
+                error_message = (
+                    "AI Assistant could not respond. "
+                    f"Error type: {type(e).__name__}. "
+                    "Please check Streamlit Cloud logs."
                 )
-
-            st.session_state.ai_messages.append(
-                {
-                    "role": "assistant",
-                    "content": error_message
-                }
-            )
+    
+                with st.chat_message("assistant"):
+    
+                    st.error(
+                        error_message
+                    )
+    
+                st.session_state.ai_messages.append(
+                    {
+                        "role": "assistant",
+                        "content": error_message
+                    }
+                )
