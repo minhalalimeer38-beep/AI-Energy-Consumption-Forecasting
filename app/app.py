@@ -968,25 +968,25 @@ elif page == "AI Assistant":
                 }
             )
 
-            except Exception as e:
+        except Exception as e:
     
-                logging.exception("AI Assistant request failed")
+            logging.exception("AI Assistant request failed")
     
-                error_message = (
-                    "AI Assistant could not respond. "
-                    f"Error type: {type(e).__name__}. "
-                    "Please check Streamlit Cloud logs."
+            error_message = (
+                "AI Assistant could not respond. "
+                f"Error type: {type(e).__name__}. "
+                "Please check Streamlit Cloud logs."
+            )
+    
+            with st.chat_message("assistant"):
+    
+                st.error(
+                    error_message
                 )
     
-                with st.chat_message("assistant"):
-    
-                    st.error(
-                        error_message
-                    )
-    
-                st.session_state.ai_messages.append(
-                    {
-                        "role": "assistant",
-                        "content": error_message
-                    }
-                )
+            st.session_state.ai_messages.append(
+                {
+                    "role": "assistant",
+                    "content": error_message
+                }
+            )
