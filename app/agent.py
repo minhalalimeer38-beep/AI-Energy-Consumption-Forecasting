@@ -179,44 +179,49 @@ Language Rules:
 
     return agent
 
-def ask_energy_agent(
-    agent,
-    question: str
-) -> str:
-    """
-    Send a user question to the energy agent
-    and return the final response.
-    """
+def ask_energy_agent(agent, question: str) -> str:
+    context = retrieve_context(question)
+
+    if context.strip():
+        prompt = f"""
+Answer the user's question using the retrieved document excerpts below.
+If the excerpts contain relevant information, do not say that the policy
+is unavailable. Mention the source filename when possible. Do not invent
+facts that are not supported by the excerpts.
+
+Retrieved document excerpts:
+{context}
+
+User question:
+{question}
+"""
+    else:
+        prompt = f"""
+No relevant passage was retrieved from the Knowledge documents.
+Do not claim you read a policy that was not retrieved. Tell the user that
+the document search did not return a relevant passage.
+
+User question:
+{question}
+"""
 
     result = agent.invoke(
         {
             "messages": [
                 {
                     "role": "user",
-                    "content": question
+                    "content": prompt,
                 }
             ]
         }
     )
 
-    messages = result.get(
-        "messages",
-        []
-    )
+    messages = result.get("messages", [])
 
     if not messages:
+        return "I could not generate a response."
 
-        return (
-            "I could not generate a response."
-        )
-
-    final_message = messages[-1]
-
-    content = getattr(
-        final_message,
-        "content",
-        ""
-    )
+    content = getattr(messages[-1], "content", "")
 
     if isinstance(content, str):
         return content
@@ -225,17 +230,11 @@ def ask_energy_agent(
         text_parts = []
 
         for item in content:
-            if isinstance(item, dict):
-                if item.get("type") == "text":
-                    text_parts.append(
-                        item.get("text", "")
-                    )
-
+            if isinstance(item, dict) and item.get("type") == "text":
+                text_parts.append(item.get("text", ""))
             elif isinstance(item, str):
                 text_parts.append(item)
 
-        return "\n".join(
-            part for part in text_parts if part
-        )
+        return "\n".join(part for part in text_parts if part)
 
     return str(content)
